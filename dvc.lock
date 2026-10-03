@@ -1,0 +1,97 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: uv run python -m src.modeling.prepare
+    deps:
+    - path: data/raw/flight_delays_subset.csv
+      hash: md5
+      md5: 297b223fdc581816fed689e419ba1d54
+      size: 58828073
+    - path: params.yaml
+      hash: md5
+      md5: 01a4ab9c8fdb4a5154afffe2d1ce63ae
+      size: 158
+    - path: src/cleaning.py
+      hash: md5
+      md5: a3bab60bada43f3fa9d622dada56dda9
+      size: 578
+    - path: src/modeling/prepare.py
+      hash: md5
+      md5: afa0fa5763f3acf7fb1a697f19d98e8c
+      size: 2340
+    params:
+      params.yaml:
+        data.delay_threshold: 15
+        data.random_state: 123
+        data.test_size: 0.2
+    outs:
+    - path: data/processed/X_test.csv
+      hash: md5
+      md5: 571fb746b5adac71cb08543f84cb0b8b
+      size: 4320495
+    - path: data/processed/X_train.csv
+      hash: md5
+      md5: 2fec2522dc0ce438a46f7ac98cb5eb81
+      size: 17283982
+    - path: data/processed/y_test.csv
+      hash: md5
+      md5: d1c537cb38e228ac090f65debda1831c
+      size: 241185
+    - path: data/processed/y_train.csv
+      hash: md5
+      md5: d3d501a8dbbb758c49009cdddf9fc173
+      size: 964701
+  train:
+    cmd: uv run python -m src.modeling.train
+    deps:
+    - path: data/processed/X_train.csv
+      hash: md5
+      md5: 2fec2522dc0ce438a46f7ac98cb5eb81
+      size: 17283982
+    - path: data/processed/y_train.csv
+      hash: md5
+      md5: d3d501a8dbbb758c49009cdddf9fc173
+      size: 964701
+    - path: params.yaml
+      hash: md5
+      md5: 01a4ab9c8fdb4a5154afffe2d1ce63ae
+      size: 158
+    - path: src/modeling/train.py
+      hash: md5
+      md5: cc45bd7f945305b27aa8d3ad21673874
+      size: 1251
+    params:
+      params.yaml:
+        model.max_depth: 12
+        model.min_samples_leaf: 2
+        model.n_estimators: 100
+        model.random_state: 42
+    outs:
+    - path: models/model.pkl
+      hash: md5
+      md5: 6b246e41db61621b258675b930798332
+      size: 33204617
+  evaluate:
+    cmd: uv run python -m src.modeling.evaluate
+    deps:
+    - path: data/processed/X_test.csv
+      hash: md5
+      md5: 571fb746b5adac71cb08543f84cb0b8b
+      size: 4320495
+    - path: data/processed/y_test.csv
+      hash: md5
+      md5: d1c537cb38e228ac090f65debda1831c
+      size: 241185
+    - path: models/model.pkl
+      hash: md5
+      md5: 6b246e41db61621b258675b930798332
+      size: 33204617
+    - path: src/modeling/evaluate.py
+      hash: md5
+      md5: 4d084543090ee84972e0588c58b0da5f
+      size: 1217
+    outs:
+    - path: metrics.json
+      hash: md5
+      md5: 0a6014ddfc397fca6b9440acf13159f2
+      size: 139
