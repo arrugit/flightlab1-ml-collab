@@ -1,0 +1,4 @@
+[core]
+    remote = storage
+['remote "storage"']
+    url = https://dagshub.com/bsdsf23m016/flightlab1-ml-collab.dvc
