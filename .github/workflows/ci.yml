@@ -1,0 +1,174 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - staging
+      - main
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      # 1. Lint
+      - name: Ruff check
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      # 2. Unit tests
+      - name: Run tests
+        run: uv run pytest tests/
+
+      # 3. Data checks
+      - name: Data checks
+        run: |
+          uv run python - <<'PY'
+          import pandas as pd
+
+          path = "data/raw/flight_delays_subset.csv"
+          df = pd.read_csv(path)
+
+          required_columns = {
+              "FlightID",
+              "Airline",
+              "FlightNumber",
+              "Origin",
+              "Destination",
+              "ScheduledDeparture",
+              "ActualDeparture",
+              "ScheduledArrival",
+              "ActualArrival",
+              "DelayMinutes",
+              "Cancelled",
+              "Diverted",
+              "AircraftType",
+              "TailNumber",
+              "Distance",
+          }
+
+          missing_columns = required_columns - set(df.columns)
+          assert not missing_columns, f"Missing columns: {missing_columns}"
+
+          assert df["FlightID"].notna().all(), "FlightID contains null values"
+          assert df["DelayMinutes"].notna().all(), "DelayMinutes contains null values"
+          assert df["Distance"].notna().all(), "Distance contains null values"
+
+          assert (df["DelayMinutes"] >= 0).all(), \
+              "DelayMinutes contains negative values"
+
+          assert (df["Distance"] > 0).all(), \
+              "Distance contains invalid values"
+
+          assert df["Cancelled"].isin([True, False]).all(), \
+              "Cancelled contains invalid values"
+
+          assert df["Diverted"].isin([True, False]).all(), \
+              "Diverted contains invalid values"
+
+          print("Data checks passed.")
+          print(f"Rows: {len(df)}")
+          print(f"Columns: {len(df.columns)}")
+          print(f"Null values: {int(df.isna().sum().sum())}")
+
+          PY
+
+      # 4. Smoke train on a small sample
+      - name: Smoke train
+        run: |
+          uv run python - <<'PY'
+          import pandas as pd
+          from sklearn.ensemble import RandomForestClassifier
+          from sklearn.model_selection import train_test_split
+
+          from src.cleaning import clean_flights
+
+          path = "data/raw/flight_delays_subset.csv"
+
+          df = pd.read_csv(path)
+
+          # Small sample for CI
+          df = df.sample(n=500, random_state=42)
+
+          # Create target
+          df = clean_flights(df, delay_threshold=15)
+
+          features = [
+              "Airline",
+              "FlightNumber",
+              "Origin",
+              "Destination",
+              "ScheduledDeparture",
+              "ScheduledArrival",
+              "AircraftType",
+              "Distance",
+          ]
+
+          X = df[features].copy()
+          y = df["is_delayed"]
+
+          # Convert scheduled times into numeric features
+          for column in ["ScheduledDeparture", "ScheduledArrival"]:
+              X[column] = pd.to_datetime(X[column])
+              X[f"{column}_hour"] = X[column].dt.hour
+              X[f"{column}_dayofweek"] = X[column].dt.dayofweek
+
+          X = X.drop(columns=["ScheduledDeparture", "ScheduledArrival"])
+
+          categorical_columns = [
+              "Airline",
+              "Origin",
+              "Destination",
+              "AircraftType",
+          ]
+
+          X = pd.get_dummies(
+              X,
+              columns=categorical_columns,
+              dtype=int,
+          )
+
+          X_train, X_test, y_train, y_test = train_test_split(
+              X,
+              y,
+              test_size=0.2,
+              random_state=42,
+              stratify=y,
+          )
+
+          model = RandomForestClassifier(
+              n_estimators=10,
+              max_depth=5,
+              random_state=42,
+              n_jobs=-1,
+          )
+
+          model.fit(X_train, y_train)
+
+          predictions = model.predict(X_test)
+
+          assert len(predictions) == len(y_test)
+
+          print("Smoke training passed.")
+          print(f"Training rows: {len(X_train)}")
+          print(f"Test rows: {len(X_test)}")
+          print(f"Features: {X_train.shape[1]}")
+
+          PY
