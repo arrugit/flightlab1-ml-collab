@@ -1,0 +1,47 @@
+[project]
+name = "flightlab"
+version = "0.0.1"
+description = "Git-based collaboration ML project on FlightLab data"
+authors = [{ name = "Areeba" }]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "loguru",
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "python-dotenv",
+    "pyyaml",
+    "scikit-learn",
+    "tqdm",
+    "typer",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel",
+    "ipython",
+    "jupyterlab",
+    "jupytext",
+    "nbstripout",
+    "notebook",
+    "pre-commit",
+    "pytest",
+    "ruff",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 99
+src = ["src"]
+include = ["pyproject.toml", "src/**/*.py", "tests/**/*.py"]
+
+[tool.ruff.lint]
+extend-select = ["I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+force-sort-within-sections = true
