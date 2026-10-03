@@ -6,6 +6,7 @@ authors = [{ name = "Areeba" }]
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "dvc>=3.67.1",
     "loguru",
     "matplotlib",
     "numpy",
@@ -45,5 +46,7 @@ extend-select = ["I"]
 [tool.ruff.lint.isort]
 known-first-party = ["src"]
 force-sort-within-sections = true
+
 [tool.ruff.lint.per-file-ignores]
 "notebooks/*.py" = ["B018", "E402"]
+
