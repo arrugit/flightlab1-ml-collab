@@ -6,6 +6,7 @@ authors = [{ name = "Areeba" }]
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "dvc>=3.67.1",
     "loguru",
     "matplotlib",
     "numpy",
