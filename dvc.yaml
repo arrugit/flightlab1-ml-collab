@@ -1,0 +1,42 @@
+stages:
+  prepare:
+    cmd: uv run python -m src.modeling.prepare
+    deps:
+      - data/raw/flight_delays_subset.csv
+      - src/cleaning.py
+      - src/modeling/prepare.py
+      - params.yaml
+    params:
+      - data.delay_threshold
+      - data.test_size
+      - data.random_state
+    outs:
+      - data/processed/X_train.csv
+      - data/processed/X_test.csv
+      - data/processed/y_train.csv
+      - data/processed/y_test.csv
+
+  train:
+    cmd: uv run python -m src.modeling.train
+    deps:
+      - data/processed/X_train.csv
+      - data/processed/y_train.csv
+      - src/modeling/train.py
+      - params.yaml
+    params:
+      - model.n_estimators
+      - model.max_depth
+      - model.min_samples_leaf
+      - model.random_state
+    outs:
+      - models/model.pkl
+
+  evaluate:
+    cmd: uv run python -m src.modeling.evaluate
+    deps:
+      - data/processed/X_test.csv
+      - data/processed/y_test.csv
+      - models/model.pkl
+      - src/modeling/evaluate.py
+    metrics:
+      - metrics.json
