@@ -1,5 +1,5 @@
 outs:
-- md5: 297b223fdc581816fed689e419ba1d54
-  size: 58828073
+- md5: 1d4978c92492739dfc780af9ffbf441f  # pragma: allowlist secret
+  size: 58720617
   hash: md5
   path: flight_delays_subset.csv
