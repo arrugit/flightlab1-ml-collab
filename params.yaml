@@ -1,0 +1,10 @@
+data:
+  delay_threshold: 15
+  test_size: 0.2
+  random_state: 123
+
+model:
+  n_estimators: 100
+  max_depth: 8
+  min_samples_leaf: 2
+  random_state: 42
